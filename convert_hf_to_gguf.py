@@ -2231,6 +2231,29 @@ class Qwen2VLModel(Model):
             yield name, data
 
 
+@Model.register("LlavaCohereForCausalLM")
+class LlavaCohereForCausalLM(Model):
+    model_arch = gguf.MODEL_ARCH.MAYA
+
+    def set_vocab(self):
+        self._set_vocab_llama_hf()
+
+    def set_gguf_parameters(self):
+        hparams = self.hparams
+
+        self.gguf_writer.add_context_length(hparams["max_position_embeddings"])
+        self.gguf_writer.add_embedding_length(hparams["hidden_size"])
+        self.gguf_writer.add_block_count(hparams["num_hidden_layers"])
+        self.gguf_writer.add_feed_forward_length(hparams["intermediate_size"])
+        self.gguf_writer.add_head_count(hparams["num_attention_heads"])
+        self.gguf_writer.add_head_count_kv(hparams.get("num_key_value_heads", hparams["num_attention_heads"]))
+        self.gguf_writer.add_layer_norm_rms_eps(hparams["rms_norm_eps"])
+        self.gguf_writer.add_file_type(self.ftype)
+
+        self.gguf_writer.add_rope_scaling_type(gguf.RopeScalingType.LINEAR)
+        self.gguf_writer.add_rope_scaling_factor(hparams["rope_scaling"]["factor"])
+
+
 @Model.register("WavTokenizerDec")
 class WavTokenizerDecModel(Model):
     model_arch = gguf.MODEL_ARCH.WAVTOKENIZER_DEC
